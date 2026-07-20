@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}骑手中心 - 外卖配送系统{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">🏍️ 骑手中心</h4>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary">
+                    <i class="bi bi-inbox"></i> 可接订单
+                </h5>
+                <p class="display-6 fw-bold text-primary mb-0">{{ available_orders }}</p>
+                <small class="text-muted">等待接单</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title text-warning">
+                    <i class="bi bi-truck"></i> 配送中
+                </h5>
+                <p class="display-6 fw-bold text-warning mb-0">{{ active_deliveries }}</p>
+                <small class="text-muted">正在配送</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title text-success">
+                    <i class="bi bi-check-circle"></i> 今日完成
+                </h5>
+                <p class="display-6 fw-bold text-success mb-0">{{ today_deliveries }}</p>
+                <small class="text-muted">今日配送完成</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <a href="{{ url_for('rider.available_orders') }}" class="btn btn-primary w-100 py-3">
+            <i class="bi bi-search"></i> 查看可接订单
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('rider.active_orders') }}" class="btn btn-warning w-100 py-3">
+            <i class="bi bi-truck"></i> 当前配送
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ url_for('rider.history') }}" class="btn btn-secondary w-100 py-3">
+            <i class="bi bi-clock-history"></i> 历史配送
+        </a>
+    </div>
+</div>
+
+<!-- Location Update Form -->
+<div class="card">
+    <div class="card-header bg-white">
+        <strong><i class="bi bi-geo-alt"></i> 更新位置</strong>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('rider.location_update') }}">
+            {{ form.hidden_tag() }}
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label for="latitude" class="form-label">纬度 (Latitude)</label>
+                    <input type="number" step="any" name="latitude" id="latitude" class="form-control" placeholder="例如: 30.5728" required>
+                </div>
+                <div class="col-md-5">
+                    <label for="longitude" class="form-label">经度 (Longitude)</label>
+                    <input type="number" step="any" name="longitude" id="longitude" class="form-control" placeholder="例如: 104.0668" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-arrow-up-circle"></i> 更新
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}商家审核 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-4">✅ 商家审核</h4>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">待审核商家账号</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_merchants %}
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>名称</th>
+                            <th>邮箱</th>
+                            <th>手机</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in pending_merchants %}
+                        <tr>
+                            <td>{{ user.name or user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone or '-' }}</td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <form action="{{ url_for('admin.merchant_approve', user_id=user.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-success">通过</button>
+                                </form>
+                                <form action="{{ url_for('admin.merchant_reject', user_id=user.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger">拒绝</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">暂无待审核商家账号</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">待审核店铺</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_shops %}
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>店铺名称</th>
+                            <th>地址</th>
+                            <th>商家</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shop in pending_shops %}
+                        <tr>
+                            <td>{{ shop.name }}</td>
+                            <td>{{ shop.address or '-' }}</td>
+                            <td>{{ shop.merchant.name or shop.merchant.username }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">暂无待审核店铺</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

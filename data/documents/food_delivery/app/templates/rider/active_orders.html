@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}配送中 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3">🏍️ 配送中</h4>
+
+{% if orders %}
+<div class="row g-3">
+    {% for order in orders %}
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0">{{ order.order_number }}</h6>
+                    <span class="badge bg-{{ order.status_color }}">{{ order.status_label }}</span>
+                </div>
+                <p class="mb-1">
+                    <strong><i class="bi bi-shop"></i> 商家:</strong> {{ order.shop.name }}
+                </p>
+                <p class="mb-1">
+                    <strong><i class="bi bi-geo-alt"></i> 商家地址:</strong> {{ order.shop.address }}
+                </p>
+                <p class="mb-1">
+                    <strong><i class="bi bi-house-door"></i> 送达地址:</strong> {{ order.address.address_detail if order.address else 'N/A' }}
+                </p>
+                <p class="mb-3">
+                    <strong><i class="bi bi-currency-yen"></i> 金额:</strong>
+                    <span class="text-danger fw-bold">¥{{ '%.2f'|format(order.total_amount) }}</span>
+                </p>
+                <div class="d-flex gap-2">
+                    <form method="post" action="{{ url_for('rider.order_pickup', order_id=order.id) }}" class="flex-fill">
+                        <button type="submit" class="btn btn-warning w-100">
+                            <i class="bi bi-box-seam"></i> 已取餐
+                        </button>
+                    </form>
+                    <form method="post" action="{{ url_for('rider.order_deliver', order_id=order.id) }}" class="flex-fill">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-circle"></i> 已送达
+                        </button>
+                    </form>
+                    <a href="{{ url_for('rider.order_detail', order_id=order.id) }}" class="btn btn-outline-primary flex-fill">
+                        <i class="bi bi-eye"></i> 详情
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-truck display-1 text-muted"></i>
+    <p class="text-muted mt-3">暂无配送中的订单</p>
+</div>
+{% endif %}
+{% endblock %}

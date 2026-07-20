@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic RAG — 智能知识库问答系统</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/reset.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/chat.css">
+  <link rel="stylesheet" href="/static/css/eval.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%234F6EF7'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-weight='bold'>R</text></svg>">
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- App Container                                     -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="app-container">
+
+    <!-- ── Sidebar Overlay (Mobile) ─────────────────────── -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ── Sidebar ──────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">R</div>
+        <div>
+          <div class="sidebar-title">Agentic RAG</div>
+          <div class="sidebar-subtitle" id="system-status">● 检查中...</div>
+        </div>
+      </div>
+
+      <button class="sidebar-new-btn" id="sidebar-new-session">
+        + 新建会话
+      </button>
+
+      <div class="sidebar-sessions" id="sidebar-sessions">
+        <!-- 动态填充 -->
+      </div>
+
+      <div style="padding:var(--space-3);border-top:1px solid var(--border-light);font-size:var(--text-xs);color:var(--text-tertiary)">
+        v2.0 · LangGraph + MCP
+      </div>
+    </aside>
+
+    <!-- ── Main Content ─────────────────────────────────── -->
+    <main class="main-content">
+
+      <!-- ── Header / Tab Bar ───────────────────────────── -->
+      <header class="header">
+        <button class="menu-toggle" id="sidebar-toggle" title="菜单">☰</button>
+
+        <button class="tab-btn active" data-tab="chat">
+          💬 聊天
+        </button>
+        <button class="tab-btn" data-tab="retrieval">
+          🔍 检索对比
+        </button>
+        <button class="tab-btn" data-tab="eval">
+          📊 评测
+        </button>
+        <button class="tab-btn" data-tab="admin">
+          ⚙️ 管理
+        </button>
+        <button class="tab-btn" data-tab="settings">
+          🔧 设置
+        </button>
+      </header>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- Chat Page                                       -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div class="page active" data-page="chat">
+        <div class="chat-messages" id="chat-messages">
+          <div class="message system">
+            <div class="bubble">
+              👋 欢迎使用 <strong>Agentic RAG 智能问答系统</strong>。
+              基于 LangGraph ReAct 循环 + MCP 工具协议 + 混合检索（BM25 + Dense + RRF）。
+              请在下方输入你的问题，系统将检索知识库并生成回答。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- Retrieval Compare Page                          -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div class="page" data-page="retrieval">
+        <div class="content-area">
+          <div style="margin-bottom:var(--space-4)">
+            <h2 style="font-size:var(--text-lg);margin-bottom:var(--space-2)">🔍 检索对比</h2>
+            <p style="font-size:var(--text-sm);color:var(--text-tertiary)">对比 BM25、Dense、Hybrid 三种检索器对同一查询的结果</p>
+          </div>
+
+          <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-4)">
+            <input type="text" id="retrieval-input" class="input" placeholder="输入查询文本..." style="flex:1">
+            <button class="btn btn-primary" id="retrieval-search-btn">🔍 检索</button>
+          </div>
+
+          <div id="retrieval-results">
+            <div class="empty-state">
+              <div class="empty-state-icon">🔍</div>
+              <div class="empty-state-title">输入查询开始对比</div>
+              <div class="empty-state-desc">输入任意查询文本，系统将并行调用三种检索器并展示对比结果</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- Evaluation Page                                 -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div class="page" data-page="eval">
+        <div class="content-area">
+          <div style="margin-bottom:var(--space-4)">
+            <h2 style="font-size:var(--text-lg);margin-bottom:var(--space-2)">📊 RAGAS 评测</h2>
+            <p style="font-size:var(--text-sm);color:var(--text-tertiary)">基于 RAGAS 框架的 Faithfulness / Answer Relevance / Context Precision / Context Recall 四项指标</p>
+          </div>
+
+          <!-- RAGAS 预设 -->
+          <div class="card" style="margin-bottom:var(--space-4)">
+            <div class="card-header">
+              <span class="card-title">🎯 预设测试集评测</span>
+            </div>
+            <div class="card-body">
+              <p style="margin-bottom:var(--space-3)">使用预设的 10 条测试问题，对比纯 Dense 检索与混合检索的效果</p>
+              <div style="display:flex;align-items:center;gap:var(--space-3)">
+                <label style="font-size:var(--text-sm)">问题数量:</label>
+                <select id="eval-count" class="input" style="width:100px">
+                  <option value="3">3</option>
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                </select>
+                <button class="btn btn-primary" id="eval-ragas-btn">▶ 开始评测</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 自定义评测 -->
+          <div class="card" style="margin-bottom:var(--space-4)">
+            <div class="card-header">
+              <span class="card-title">✏️ 自定义问题评测</span>
+            </div>
+            <div class="card-body">
+              <p style="margin-bottom:var(--space-3)">每行一个问题，系统将逐条运行检索+生成+评估流程</p>
+              <textarea id="eval-custom-questions" class="input" rows="4" placeholder="输入问题，每行一个...&#10;例如：&#10;Conv2d 的参数有哪些？&#10;什么是迁移学习？"></textarea>
+              <button class="btn btn-primary" id="eval-custom-btn" style="margin-top:var(--space-3)">▶ 开始自定义评测</button>
+            </div>
+          </div>
+
+          <!-- 进度 -->
+          <div class="eval-progress" id="eval-progress" style="display:none;margin-bottom:var(--space-4)">
+            <div class="eval-progress-header">
+              <span class="eval-progress-text" id="eval-progress-text">准备中...</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-bar-fill" id="eval-progress-bar" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- 结果 -->
+          <div id="eval-results"></div>
+          <div id="eval-summary"></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- Admin Page                                      -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div class="page" data-page="admin">
+        <div class="content-area">
+          <div style="margin-bottom:var(--space-4)">
+            <h2 style="font-size:var(--text-lg);margin-bottom:var(--space-2)">⚙️ 文档管理</h2>
+            <p style="font-size:var(--text-sm);color:var(--text-tertiary)">管理知识库文档：上传、删除、重建索引</p>
+          </div>
+
+          <!-- API Key -->
+          <div class="card" style="margin-bottom:var(--space-4)">
+            <div class="card-body" style="display:flex;align-items:center;gap:var(--space-3)">
+              <label style="font-size:var(--text-sm);white-space:nowrap">Admin API Key:</label>
+              <input type="password" id="admin-apikey-input" class="input" placeholder="输入 Admin API Key" style="flex:1">
+            </div>
+          </div>
+
+          <!-- 上传区 -->
+          <div class="upload-zone" id="upload-zone" style="margin-bottom:var(--space-4)">
+            <div class="upload-icon">📁</div>
+            <div class="upload-title">拖拽文件到此处或点击上传</div>
+            <div class="upload-hint">支持 .txt, .md, .py, .json 等文本文件</div>
+          </div>
+
+          <!-- 工具栏 -->
+          <div class="admin-toolbar" style="margin-bottom:var(--space-3)">
+            <div class="admin-toolbar-left">
+              <span style="font-size:var(--text-sm);font-weight:var(--weight-medium)" id="admin-doc-count">文档列表</span>
+            </div>
+            <div class="admin-toolbar-right">
+              <button class="btn btn-secondary btn-sm" id="admin-refresh-btn">🔄 刷新</button>
+              <button class="btn btn-secondary btn-sm" id="admin-add-btn">+ 添加</button>
+              <button class="btn btn-danger btn-sm" id="admin-rebuild-btn">🔨 重建索引</button>
+            </div>
+          </div>
+
+          <!-- 文档列表 -->
+          <div class="doc-table" id="admin-doc-table">
+            <div class="doc-table-header">
+              <div>标题</div>
+              <div>来源</div>
+              <div style="text-align:center">Chunks</div>
+              <div style="text-align:right">操作</div>
+            </div>
+            <div id="admin-doc-list">
+              <div class="empty-state">
+                <div class="empty-state-icon">📂</div>
+                <div class="empty-state-title">加载中...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- Settings Page                                   -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <div class="page" data-page="settings">
+        <div class="content-area">
+          <div style="margin-bottom:var(--space-4)">
+            <h2 style="font-size:var(--text-lg);margin-bottom:var(--space-2)">🔧 设置</h2>
+            <p style="font-size:var(--text-sm);color:var(--text-tertiary)">调整系统和模型参数</p>
+          </div>
+
+          <!-- 模型设置 -->
+          <div class="settings-section">
+            <div class="settings-section-header">🤖 模型设置</div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">LLM 提供商</div>
+                <div class="settings-desc">选择底层大语言模型</div>
+              </div>
+              <div class="settings-control">
+                <select id="settings-llm-provider">
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="anthropic">Anthropic (Claude)</option>
+                </select>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">最大步数</div>
+                <div class="settings-desc">ReAct 循环的最大检索轮次</div>
+              </div>
+              <div class="settings-control" style="display:flex;align-items:center;gap:8px">
+                <input type="range" id="settings-max-steps" min="1" max="10" value="5" style="flex:1">
+                <span id="settings-max-steps-val" style="font-size:var(--text-sm);font-weight:var(--weight-semibold);min-width:20px">5</span>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">流式输出</div>
+                <div class="settings-desc">启用 SSE 流式返回回答</div>
+              </div>
+              <div class="settings-control">
+                <div class="toggle active" id="settings-stream"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 知识库类别 -->
+          <div class="settings-section" id="categories-section">
+            <div class="settings-section-header">📂 知识库类别</div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">文档类别过滤</div>
+                <div class="settings-desc">选择类别后，聊天仅搜索该类别的文档（缩小范围、提高精度）</div>
+              </div>
+              <div class="settings-control">
+                <button class="btn btn-secondary btn-sm" id="settings-gen-categories">⚡ 生成类别</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">上传后自动分类</div>
+                <div class="settings-desc">上传文档时自动生成摘要并归入已有类别或创建新类别</div>
+              </div>
+              <div class="settings-control">
+                <div class="toggle active" id="settings-auto-categorize"></div>
+              </div>
+            </div>
+            <div id="category-tags" style="padding:var(--space-2) var(--space-3);display:flex;flex-wrap:wrap;gap:var(--space-2)">
+              <span style="font-size:var(--text-xs);color:var(--text-tertiary)">暂无类别 — 点击"生成类别"</span>
+            </div>
+            <div id="category-progress" style="display:none;padding:var(--space-2) var(--space-3)"></div>
+          </div>
+
+          <!-- 管理设置 -->
+          <div class="settings-section">
+            <div class="settings-section-header">🔑 Admin 设置</div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Admin API Key</div>
+                <div class="settings-desc">用于管理操作（上传/删除文档）的鉴权密钥</div>
+              </div>
+              <div class="settings-control">
+                <input type="password" id="settings-admin-key" class="input" placeholder="admin-secret-change-me">
+              </div>
+            </div>
+          </div>
+
+          <!-- 系统 -->
+          <div class="settings-section">
+            <div class="settings-section-header">💻 系统</div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">健康检查</div>
+                <div class="settings-desc">检查后端服务和索引状态</div>
+              </div>
+              <div class="settings-control">
+                <button class="btn btn-secondary btn-sm" id="settings-health-btn">检查</button>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">清空聊天历史</div>
+                <div class="settings-desc">删除所有本地保存的聊天记录</div>
+              </div>
+              <div class="settings-control">
+                <button class="btn btn-danger btn-sm" id="settings-clear-history">清空</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 关于 -->
+          <div class="settings-section">
+            <div class="settings-section-header">ℹ️ 关于</div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-label">Agentic RAG v2.0</div>
+                <div class="settings-desc">基于 LangGraph + MCP + 混合检索的智能问答系统</div>
+              </div>
+              <div style="font-size:var(--text-xs);color:var(--text-tertiary)">
+                FastAPI · ChromaDB · BM25 · RRF<br>
+                RAGAS Evaluation · SSE Streaming
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Input Bar (仅聊天页显示) ────────────────────── -->
+      <div class="input-bar">
+        <textarea
+          id="chat-input"
+          class="chat-input"
+          rows="1"
+          placeholder="输入你的问题... (Enter 发送 · Shift+Enter 换行)"
+          maxlength="4000"
+        ></textarea>
+        <div class="web-search-toggle" id="web-search-toggle" title="联网搜索（默认关闭）">
+          🌐
+        </div>
+        <button class="btn btn-ghost btn-sm stop-btn" id="stop-btn" title="停止生成">
+          ⏹ 停止
+        </button>
+        <button class="send-btn" id="send-btn" title="发送">
+          ➤
+        </button>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- JavaScript (顺序很重要)                             -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <!-- Config + Utils -->
+  <script src="/static/js/config.js"></script>
+  <script src="/static/js/utils/dom.js"></script>
+  <script src="/static/js/utils/format.js"></script>
+
+  <!-- Store -->
+  <script src="/static/js/store/state.js"></script>
+
+  <!-- API Layer -->
+  <script src="/static/js/api/client.js"></script>
+  <script src="/static/js/api/sse.js"></script>
+  <script src="/static/js/api/chat.js"></script>
+  <script src="/static/js/api/eval.js"></script>
+  <script src="/static/js/api/admin.js"></script>
+  <script src="/static/js/api/categories.js"></script>
+  <script src="/static/js/api/health.js"></script>
+
+  <!-- Components -->
+  <script src="/static/js/components/toast.js"></script>
+  <script src="/static/js/components/modal.js"></script>
+  <script src="/static/js/components/markdown.js"></script>
+  <script src="/static/js/components/typing-dots.js"></script>
+  <script src="/static/js/components/chat-bubble.js"></script>
+  <script src="/static/js/components/thinking.js"></script>
+  <script src="/static/js/components/source-card.js"></script>
+  <script src="/static/js/components/tabs.js"></script>
+
+  <!-- Pages -->
+  <script src="/static/js/pages/chat.js"></script>
+  <script src="/static/js/pages/retrieval.js"></script>
+  <script src="/static/js/pages/eval.js"></script>
+  <script src="/static/js/pages/admin.js"></script>
+  <script src="/static/js/pages/settings.js"></script>
+
+  <!-- App Entry -->
+  <script src="/static/js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}退款记录 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3">🔄 退款记录</h4>
+
+{% if refunds %}
+{% for refund in refunds %}
+<div class="card mb-2">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <strong>订单: {{ refund.order.order_number }}</strong>
+            <span class="badge bg-{% if refund.status == 'completed' %}success{% elif refund.status == 'rejected' %}dark{% else %}warning{% endif %}">{{ refund.status }}</span>
+        </div>
+        <p class="mb-1 small">金额: ¥{{ '%.2f'|format(refund.amount) }}</p>
+        <p class="mb-1 small">原因: {{ refund.reason }}</p>
+        <p class="mb-0 small text-muted">{{ refund.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="text-center py-5 text-muted"><p>暂无退款记录</p></div>
+{% endif %}
+{% endblock %}

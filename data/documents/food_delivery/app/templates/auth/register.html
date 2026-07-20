@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}注册 - 外卖配送系统{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4">用户注册</h3>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.username.label }}</label>
+                        {{ form.username(class="form-control", placeholder="请输入用户名") }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small">{% for e in form.username.errors %}{{ e }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.email.label }}</label>
+                        {{ form.email(class="form-control", placeholder="请输入邮箱地址") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small">{% for e in form.email.errors %}{{ e }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label class="form-label">{{ form.name.label }}</label>
+                            {{ form.name(class="form-control", placeholder="请输入真实姓名") }}
+                        </div>
+                        <div class="col">
+                            <label class="form-label">{{ form.phone.label }}</label>
+                            {{ form.phone(class="form-control", placeholder="请输入手机号") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.role.label }}</label>
+                        {{ form.role(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.password.label }}</label>
+                        {{ form.password(class="form-control", placeholder="至少6位密码") }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small">{% for e in form.password.errors %}{{ e }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.confirm_password.label }}</label>
+                        {{ form.confirm_password(class="form-control", placeholder="再次输入密码") }}
+                        {% if form.confirm_password.errors %}
+                            <div class="text-danger small">{% for e in form.confirm_password.errors %}{{ e }}{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+                <p class="text-center mt-3 mb-0">
+                    已有账号？<a href="{{ url_for('auth.login') }}">立即登录</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

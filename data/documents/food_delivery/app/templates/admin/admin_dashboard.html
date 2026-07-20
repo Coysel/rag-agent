@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}管理后台 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-4">🛡️ 管理后台</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <h6 class="card-title">注册用户</h6>
+                <p class="fs-3 mb-0">{{ stats.total_users }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h6 class="card-title">商家数量</h6>
+                <p class="fs-3 mb-0">{{ stats.total_merchants }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-info">
+            <div class="card-body">
+                <h6 class="card-title">骑手数量</h6>
+                <p class="fs-3 mb-0">{{ stats.total_riders }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body">
+                <h6 class="card-title">店铺数量</h6>
+                <p class="fs-3 mb-0">{{ stats.total_shops }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-danger">
+            <div class="card-body">
+                <h6 class="card-title">总订单数</h6>
+                <p class="fs-3 mb-0">{{ stats.total_orders }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-secondary">
+            <div class="card-body">
+                <h6 class="card-title">已完成订单</h6>
+                <p class="fs-3 mb-0">{{ stats.completed_orders }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-dark">
+            <div class="card-body">
+                <h6 class="card-title">总营收</h6>
+                <p class="fs-3 mb-0">¥{{ '%.2f'|format(stats.total_revenue) }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if stats.pending_shops > 0 %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>⚠️ 待审核店铺：</strong> 当前有 <strong>{{ stats.pending_shops }}</strong> 家店铺等待审核，请及时处理。
+    <a href="{{ url_for('admin.merchants_pending') }}" class="alert-link">前往审核</a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4 col-6">
+        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-primary w-100">👥 用户管理</a>
+    </div>
+    <div class="col-md-4 col-6">
+        <a href="{{ url_for('admin.merchants_pending') }}" class="btn btn-outline-success w-100">✅ 商家审核</a>
+    </div>
+    <div class="col-md-4 col-6">
+        <a href="{{ url_for('admin.shops') }}" class="btn btn-outline-warning w-100">🏪 店铺管理</a>
+    </div>
+    <div class="col-md-4 col-6">
+        <a href="{{ url_for('admin.orders') }}" class="btn btn-outline-info w-100">📋 订单管理</a>
+    </div>
+    <div class="col-md-4 col-6">
+        <a href="{{ url_for('admin.complaints') }}" class="btn btn-outline-danger w-100">📝 投诉处理</a>
+    </div>
+    <div class="col-md-4 col-6">
+        <a href="{{ url_for('admin.statistics') }}" class="btn btn-outline-dark w-100">📊 数据统计</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">订单状态分布</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>订单状态</th>
+                    <th>数量</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for status, count in orders.items() %}
+                <tr>
+                    <td>
+                        {% set status_colors = {
+                            'PENDING_PAYMENT': 'warning',
+                            'PAID': 'info',
+                            'ACCEPTED': 'primary',
+                            'PREPARING': 'secondary',
+                            'READY_FOR_PICKUP': 'dark',
+                            'DELIVERING': 'info',
+                            'DELIVERED': 'success',
+                            'COMPLETED': 'success',
+                            'CANCELLED': 'danger',
+                            'REFUND_REQUESTED': 'warning',
+                            'REFUNDED': 'secondary'
+                        } %}
+                        <span class="badge bg-{{ status_colors.get(status, 'secondary') }}">{{ status }}</span>
+                    </td>
+                    <td>{{ count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

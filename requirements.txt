@@ -1,0 +1,38 @@
+# LangGraph — ReAct Agent 循环
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# ChromaDB — 向量存储
+chromadb>=0.5.0
+
+# BM25 — 稀疏检索
+rank-bm25>=0.2.2
+
+# FastAPI + 流式输出
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+sse-starlette>=2.0.0
+
+# Claude API
+anthropic>=0.40.0
+
+# Token 估算
+tiktoken>=0.7.0
+
+# RAGAS 评估
+ragas>=0.2.0
+datasets>=2.20.0
+
+# Embedding API
+openai>=1.50.0
+
+# MCP Python SDK
+mcp>=1.0.0
+
+# 数据处理
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+aiofiles>=24.0.0
+
+# SQLite (built-in, no extra package)

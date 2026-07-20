@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}订单详情 - 外卖配送系统{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('rider.active_orders') }}">配送中</a></li>
+        <li class="breadcrumb-item active">{{ order.order_number }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Order Status -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">订单号: {{ order.order_number }}</h5>
+                    <span class="badge bg-{{ order.status_color }} fs-6">{{ order.status_label }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>菜品明细</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-borderless mb-0">
+                    <thead>
+                        <tr>
+                            <th>菜品</th>
+                            <th class="text-center">数量</th>
+                            <th class="text-end">单价</th>
+                            <th class="text-end">小计</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items %}
+                        <tr>
+                            <td>{{ item.item_name }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">¥{{ '%.2f'|format(item.unit_price) }}</td>
+                            <td class="text-end">¥{{ '%.2f'|format(item.subtotal) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">合计</td>
+                            <td class="text-end text-danger fw-bold">¥{{ '%.2f'|format(order.total_amount) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Shop Info -->
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong><i class="bi bi-shop"></i> 商家信息</strong></div>
+            <div class="card-body">
+                <p class="mb-1"><strong>名称:</strong> {{ order.shop.name }}</p>
+                <p class="mb-1"><strong>地址:</strong> {{ order.shop.address }}</p>
+                <p class="mb-0"><strong>电话:</strong> {{ order.shop.phone or '暂无' }}</p>
+            </div>
+        </div>
+
+        <!-- Delivery Address -->
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong><i class="bi bi-geo-alt"></i> 送达地址</strong></div>
+            <div class="card-body">
+                {% if order.address %}
+                <p class="mb-1"><strong>地址:</strong> {{ order.address.address_detail }}</p>
+                <p class="mb-1"><strong>标签:</strong> {{ order.address.label or '无' }}</p>
+                {% else %}
+                <p class="text-muted mb-0">暂无地址信息</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        {% if order.customer %}
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong><i class="bi bi-person"></i> 客户信息</strong></div>
+            <div class="card-body">
+                <p class="mb-1"><strong>姓名:</strong> {{ order.customer.name or order.customer.username }}</p>
+                <p class="mb-0"><strong>电话:</strong> {{ order.customer.phone or '暂无' }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Back Button -->
+        <a href="{{ url_for('rider.active_orders') }}" class="btn btn-outline-secondary w-100">
+            <i class="bi bi-arrow-left"></i> 返回
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}我的评价 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3">⭐ 我的评价</h4>
+
+{% if reviews %}
+{% for review in reviews %}
+<div class="card mb-2">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <strong>{{ review.target_type }} #{{ review.target_id }}</strong>
+            <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+        </div>
+        <div class="star-rating">{% for i in range(review.rating) %}⭐{% endfor %}</div>
+        <p class="mb-1">{{ review.comment }}</p>
+        {% if review.replies.count() > 0 %}
+        <div class="border-start ps-3 mt-2">
+            {% for reply in review.replies %}
+            <p class="mb-0 small text-muted"><strong>商家回复:</strong> {{ reply.content }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="text-center py-5 text-muted"><p>暂无评价</p></div>
+{% endif %}
+{% endblock %}

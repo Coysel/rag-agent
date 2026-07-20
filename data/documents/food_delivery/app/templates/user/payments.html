@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}支付记录 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3">💳 支付记录</h4>
+
+{% if payments %}
+{% for payment in payments %}
+<div class="card mb-2">
+    <div class="card-body py-2">
+        <div class="d-flex justify-content-between">
+            <strong>{{ payment.order.order_number }}</strong>
+            <span class="text-muted small">{{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        </div>
+        <p class="mb-0 small">
+            金额: <span class="text-danger">¥{{ '%.2f'|format(payment.amount) }}</span> |
+            状态: <span class="badge bg-{% if payment.status == 'success' %}success{% elif payment.status == 'refunded' %}warning{% else %}danger{% endif %}">{{ payment.status }}</span> |
+            交易号: {{ payment.transaction_id }}
+        </p>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="text-center py-5 text-muted"><p>暂无支付记录</p></div>
+{% endif %}
+{% endblock %}

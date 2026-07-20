@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}商家中心 - 外卖配送系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if not shop %}
+    <div class="text-center py-5">
+        <i class="bi bi-shop display-1 text-muted"></i>
+        <h2 class="mt-3">您还没有创建店铺</h2>
+        <p class="text-muted">请先创建您的店铺信息，然后开始管理菜品和订单。</p>
+        <a href="{{ url_for('merchant.shop') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle"></i> 立即创建店铺
+        </a>
+    </div>
+    {% else %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-1"><i class="bi bi-shop"></i> 商家中心</h1>
+            <div class="d-flex align-items-center gap-2">
+                <h4 class="text-muted mb-0">{{ shop.name }}</h4>
+                {% set status_map = {'pending': 'warning', 'active': 'success', 'suspended': 'danger'} %}
+                {% set status_label_map = {'pending': '待审核', 'active': '营业中', 'suspended': '已暂停'} %}
+                <span class="badge bg-{{ status_map.get(shop.status, 'secondary') }}">
+                    {{ status_label_map.get(shop.status, shop.status) }}
+                </span>
+            </div>
+        </div>
+        <a href="{{ url_for('merchant.shop') }}" class="btn btn-outline-primary">
+            <i class="bi bi-gear"></i> 店铺设置
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <div class="display-6 text-primary">{{ pending_count }}</div>
+                    <div class="text-muted">待处理订单</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <div class="display-6 text-warning">{{ preparing_count }}</div>
+                    <div class="text-muted">备餐中订单</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <div class="display-6 text-info">{{ today_orders }}</div>
+                    <div class="text-muted">今日订单</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <div class="display-6 text-success">¥{{ "%.2f"|format(today_revenue) }}</div>
+                    <div class="text-muted">今日营收</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-lightning"></i> 快捷操作</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <a href="{{ url_for('merchant.orders') }}" class="btn btn-outline-primary w-100 py-3">
+                        <i class="bi bi-list-check fs-4 d-block"></i>
+                        订单管理
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('merchant.menu') }}" class="btn btn-outline-success w-100 py-3">
+                        <i class="bi bi-menu-app fs-4 d-block"></i>
+                        菜品管理
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('merchant.revenue') }}" class="btn btn-outline-warning w-100 py-3">
+                        <i class="bi bi-graph-up-arrow fs-4 d-block"></i>
+                        营收统计
+                    </a>
+                </div>
+                <div class="col-md-3">
+                    <a href="{{ url_for('merchant.shop') }}" class="btn btn-outline-secondary w-100 py-3">
+                        <i class="bi bi-gear fs-4 d-block"></i>
+                        店铺设置
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-clock-history"></i> 最近订单</h5>
+            <a href="{{ url_for('merchant.orders') }}" class="btn btn-sm btn-outline-primary">查看全部</a>
+        </div>
+        <div class="card-body p-0">
+            {% if recent_orders %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>订单号</th>
+                            <th>客户</th>
+                            <th>金额</th>
+                            <th>状态</th>
+                            <th>时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('merchant.order_detail', order_id=order.id) }}" class="text-decoration-none">
+                                    {{ order.order_number }}
+                                </a>
+                            </td>
+                            <td>{{ order.customer.name or order.customer.username }}</td>
+                            <td>¥{{ "%.2f"|format(order.total_amount) }}</td>
+                            <td>
+                                {% with label=order.status_label, color=order.status_color %}
+                                    {% include 'components/order_status_badge.html' %}
+                                {% endwith %}
+                            </td>
+                            <td class="text-muted small">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <a href="{{ url_for('merchant.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                    详情
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-inbox"></i> 暂无最近订单
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

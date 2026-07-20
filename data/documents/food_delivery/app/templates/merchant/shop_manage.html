@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}店铺管理 - 外卖配送系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-shop"></i> 店铺管理</h1>
+        {% if shop %}
+            {% set status_map = {'pending': 'warning', 'active': 'success', 'suspended': 'danger'} %}
+            {% set status_label_map = {'pending': '待审核', 'active': '营业中', 'suspended': '已暂停'} %}
+            <span class="badge bg-{{ status_map.get(shop.status, 'secondary') }} fs-6">
+                {{ status_label_map.get(shop.status, shop.status) }}
+            </span>
+        {% endif %}
+    </div>
+
+    {% if shop and shop.status == 'pending' %}
+    <div class="alert alert-warning" role="alert">
+        <i class="bi bi-info-circle"></i> 您的店铺正在审核中，审核通过后即可开始营业。
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('merchant.shop') }}">
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="请输入店铺名称") }}
+                    {% if form.name.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.name.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=4, placeholder="请描述您的店铺和特色") }}
+                    {% if form.description.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.description.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.address.label(class="form-label") }}
+                    {{ form.address(class="form-control" + (" is-invalid" if form.address.errors else ""), placeholder="请输入店铺地址") }}
+                    {% if form.address.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.address.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.phone.label(class="form-label") }}
+                    {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="请输入联系电话") }}
+                    {% if form.phone.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.phone.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-secondary">取消</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

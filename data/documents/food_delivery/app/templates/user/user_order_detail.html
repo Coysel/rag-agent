@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}订单详情 - 外卖配送系统{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('user.orders') }}">我的订单</a></li>
+        <li class="breadcrumb-item active">{{ order.order_number }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Order Status -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">订单号: {{ order.order_number }}</h5>
+                    <span class="badge bg-{{ order.status_color }} fs-6">{{ order.status_label }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Timeline -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="mb-3">订单跟踪</h6>
+                <div class="order-timeline">
+                    {% set steps = [
+                        ('PENDING_PAYMENT', '提交订单'),
+                        ('PAID', '支付成功'),
+                        ('ACCEPTED', '商家接单'),
+                        ('PREPARING', '商家备餐'),
+                        ('READY_FOR_PICKUP', '等待骑手取餐'),
+                        ('DELIVERING', '骑手配送中'),
+                        ('DELIVERED', '已送达'),
+                        ('COMPLETED', '已完成'),
+                    ] %}
+                    {% for status, label in steps %}
+                    <div class="timeline-item {% if order.status in ['CANCELLED','REFUNDED','REFUND_REQUESTED'] %}inactive{% endif %}">
+                        {% if order.status == 'CANCELLED' %}
+                            <small class="text-muted">{{ label }}</small>
+                        {% elif order.status == 'REFUNDED' and status in ['DELIVERED','COMPLETED'] %}
+                            <small class="text-muted">{{ label }}</small>
+                        {% else %}
+                            <small>{{ label }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if order.status == 'CANCELLED' %}
+                    <div><span class="badge bg-dark">已取消</span></div>
+                    {% elif order.status == 'REFUND_REQUESTED' %}
+                    <div><span class="badge bg-danger">退款中</span></div>
+                    {% elif order.status == 'REFUNDED' %}
+                    <div><span class="badge bg-danger">已退款</span></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>菜品明细</strong></div>
+            <div class="card-body p-0">
+                <table class="table table-borderless mb-0">
+                    <thead><tr><th>菜品</th><th class="text-center">数量</th><th class="text-end">单价</th><th class="text-end">小计</th></tr></thead>
+                    <tbody>
+                        {% for item in order.items %}
+                        <tr>
+                            <td>{{ item.item_name }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">¥{{ '%.2f'|format(item.unit_price) }}</td>
+                            <td class="text-end">¥{{ '%.2f'|format(item.subtotal) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="3" class="text-end fw-bold">合计</td><td class="text-end text-danger fw-bold">¥{{ '%.2f'|format(order.total_amount) }}</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Actions -->
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>操作</strong></div>
+            <div class="card-body">
+                {% if order.status == 'PENDING_PAYMENT' %}
+                <form method="post" action="{{ url_for('user.pay_order', order_id=order.id) }}" class="mb-2">
+                    <button class="btn btn-success w-100">💰 立即支付</button>
+                </form>
+                <form method="post" action="{{ url_for('user.cancel_order', order_id=order.id) }}">
+                    <button class="btn btn-outline-danger w-100" onclick="return confirm('确定取消订单吗？')">取消订单</button>
+                </form>
+                {% elif order.status == 'DELIVERED' %}
+                <form method="post" action="{{ url_for('user.confirm_order', order_id=order.id) }}" class="mb-2">
+                    <button class="btn btn-success w-100">✅ 确认收货</button>
+                </form>
+                {% elif order.status == 'COMPLETED' %}
+                <p class="text-success"><i class="bi bi-check-circle"></i> 订单已完成</p>
+                <button class="btn btn-outline-primary w-100 mb-2" data-bs-toggle="modal" data-bs-target="#reviewModal">⭐ 评价</button>
+                {% endif %}
+
+                {% if order.status in ['PAID','ACCEPTED','PREPARING','READY_FOR_PICKUP','DELIVERING','DELIVERED','COMPLETED'] and not order.refund %}
+                <button class="btn btn-outline-danger w-100 {% if order.status == 'COMPLETED' %}mt-2{% endif %}" data-bs-toggle="modal" data-bs-target="#refundModal">🔄 申请退款</button>
+                {% endif %}
+
+                {% if order.refund %}
+                <hr>
+                <p class="small mb-0">退款状态: <span class="badge bg-{% if order.refund.status == 'completed' %}success{% elif order.refund.status == 'rejected' %}dark{% else %}warning{% endif %}">{{ order.refund.status }}</span></p>
+                <p class="small text-muted">{{ order.refund.reason[:50] }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Order Info -->
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>订单信息</strong></div>
+            <div class="card-body">
+                <p class="small mb-1"><strong>商家:</strong> {{ order.shop.name }}</p>
+                <p class="small mb-1"><strong>地址:</strong> {{ order.address.address_detail if order.address else 'N/A' }}</p>
+                {% if order.rider %}<p class="small mb-1"><strong>骑手:</strong> {{ order.rider.name }}</p>{% endif %}
+                <p class="small mb-1"><strong>备注:</strong> {{ order.note or '无' }}</p>
+                <p class="small mb-0 text-muted">{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            </div>
+        </div>
+
+        <!-- Payment -->
+        {% if order.payment and order.payment.status == 'success' %}
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>支付信息</strong></div>
+            <div class="card-body">
+                <p class="small mb-1">方式: {{ order.payment.method }}</p>
+                <p class="small mb-1">交易号: {{ order.payment.transaction_id }}</p>
+                <p class="small mb-0">时间: {{ order.payment.paid_at.strftime('%Y-%m-%d %H:%M') if order.payment.paid_at else '-' }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Review Modal -->
+{% if order.status == 'COMPLETED' %}
+<div class="modal fade" id="reviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ url_for('user.review_create') }}">
+                <div class="modal-header"><h5>评价订单</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">评价对象</label>
+                        <select name="target_type" class="form-select">
+                            <option value="merchant">商家: {{ order.shop.name }}</option>
+                            {% if order.rider %}<option value="rider">骑手: {{ order.rider.name }}</option>{% endif %}
+                        </select>
+                    </div>
+                    <input type="hidden" name="target_id" id="reviewTargetId" value="{{ order.shop.merchant_id }}">
+                    <div class="mb-3">
+                        <label class="form-label">评分</label>
+                        <select name="rating" class="form-select">
+                            <option value="5">⭐⭐⭐⭐⭐ (5分)</option>
+                            <option value="4">⭐⭐⭐⭐ (4分)</option>
+                            <option value="3">⭐⭐⭐ (3分)</option>
+                            <option value="2">⭐⭐ (2分)</option>
+                            <option value="1">⭐ (1分)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">评价内容</label>
+                        <textarea name="comment" class="form-control" rows="3" placeholder="分享您的用餐体验..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">提交评价</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Refund Modal -->
+{% if order.status in ['PAID','ACCEPTED','PREPARING','READY_FOR_PICKUP','DELIVERING','DELIVERED','COMPLETED'] and not order.refund %}
+<div class="modal fade" id="refundModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{{ url_for('user.refund_request') }}">
+                <div class="modal-header"><h5>申请退款</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <p class="text-muted small">订单金额: ¥{{ '%.2f'|format(order.total_amount) }}</p>
+                    <div class="mb-3">
+                        <label class="form-label">退款原因</label>
+                        <textarea name="reason" class="form-control" rows="3" placeholder="请详细说明退款原因..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">提交退款申请</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.querySelector('select[name="target_type"]')?.addEventListener('change', function() {
+    const tid = this.value === 'merchant' ? '{{ order.shop.merchant_id }}' : '{{ order.rider_id or "" }}';
+    document.getElementById('reviewTargetId').value = tid;
+});
+</script>
+{% endblock %}

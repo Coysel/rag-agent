@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ shop.name }} - 外卖配送系统{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">首页</a></li>
+        <li class="breadcrumb-item active">{{ shop.name }}</li>
+    </ol>
+</nav>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-9">
+                <h3>{{ shop.name }}
+                    <span class="badge bg-warning text-dark ms-2">
+                        <i class="bi bi-star-fill"></i> {{ '%.1f'|format(shop.rating) }}
+                    </span>
+                </h3>
+                <p class="text-muted">{{ shop.description }}</p>
+                <p class="mb-1"><i class="bi bi-geo-alt"></i> {{ shop.address }}</p>
+                <p class="mb-0"><i class="bi bi-telephone"></i> {{ shop.phone }}</p>
+            </div>
+            <div class="col-md-3 text-end">
+                <p class="text-muted">已售 <strong>{{ shop.total_sales }}</strong> 单</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Filter -->
+<div class="mb-3">
+    <a href="{{ url_for('main.shop_detail', shop_id=shop.id) }}" class="btn btn-sm {% if not request.args.get('category') %}btn-primary{% else %}btn-outline-primary{% endif %}">全部</a>
+    {% for cat in ['热菜', '凉菜', '汤品', '主食', '饮品'] %}
+    <a href="{{ url_for('main.shop_detail', shop_id=shop.id, category=cat) }}" class="btn btn-sm {% if request.args.get('category') == cat %}btn-primary{% else %}btn-outline-primary{% endif %}">{{ cat }}</a>
+    {% endfor %}
+</div>
+
+<!-- Menu Items -->
+{% if current_user.is_authenticated and current_user.role == 'user' %}
+<form id="addToCartForm" method="post" action="{{ url_for('user.cart_add') }}">
+{% endif %}
+{% for category, items in categories.items() %}
+<h5 class="mt-4 mb-3">{{ category }}</h5>
+<div class="row g-3">
+    {% for item in items %}
+    <div class="col-md-6">
+        <div class="card menu-item-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title mb-1">{{ item.name }}</h6>
+                        <p class="card-text text-muted small mb-2">{{ item.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-danger fw-bold">{{ '¥%.2f'|format(item.price) }}</span>
+                            <small class="text-muted">库存: {{ item.stock }}</small>
+                        </div>
+                    </div>
+                    {% if current_user.is_authenticated and current_user.role == 'user' and item.stock > 0 %}
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2 add-to-cart-btn"
+                            data-item-id="{{ item.id }}" data-item-name="{{ item.name }}">
+                        <i class="bi bi-cart-plus"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}
+{% if current_user.is_authenticated and current_user.role == 'user' %}
+</form>
+{% endif %}
+
+{% if not categories %}
+<div class="text-center py-4 text-muted">
+    <p>该商家暂无可用菜品</p>
+</div>
+{% endif %}
+
+<!-- Reviews -->
+{% if reviews %}
+<h5 class="mt-5 mb-3">💬 用户评价</h5>
+{% for review in reviews %}
+<div class="card mb-2">
+    <div class="card-body py-2">
+        <div class="d-flex justify-content-between">
+            <strong>{{ review.author.name or review.author.username }}</strong>
+            <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+        </div>
+        <div class="star-rating">{% for i in range(review.rating) %}⭐{% endfor %}</div>
+        <p class="mb-0 small">{{ review.comment }}</p>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const itemId = this.dataset.itemId;
+        const itemName = this.dataset.itemName;
+        fetch('{{ url_for("user.cart_add") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `menu_item_id=${itemId}&quantity=1`
+        }).then(res => res.json()).then(data => {
+            if (data.success) {
+                alert(`"${itemName}" 已加入购物车！`);
+            } else {
+                alert(data.message || '添加失败');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

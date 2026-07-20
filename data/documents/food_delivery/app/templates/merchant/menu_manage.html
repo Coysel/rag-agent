@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}菜品管理 - 外卖配送系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-menu-app"></i> 菜品管理</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+            <i class="bi bi-plus-circle"></i> 添加菜品
+        </button>
+    </div>
+
+    {% if not menu_items %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-egg-fried display-1"></i>
+        <h4 class="mt-3">暂无菜品</h4>
+        <p>点击上方"添加菜品"按钮来添加您的第一道菜品。</p>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>菜品名称</th>
+                        <th>分类</th>
+                        <th>单价</th>
+                        <th>库存</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in menu_items %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.name }}</strong>
+                            {% if item.description %}
+                            <br><small class="text-muted">{{ item.description[:30] }}{% if item.description|length > 30 %}...{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.category }}</td>
+                        <td>¥{{ "%.2f"|format(item.price) }}</td>
+                        <td>{{ item.stock }}</td>
+                        <td>
+                            {% if item.is_available %}
+                            <span class="badge bg-success">上架</span>
+                            {% else %}
+                            <span class="badge bg-secondary">下架</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ item.id }}">
+                                    <i class="bi bi-pencil"></i> 编辑
+                                </button>
+                                <form method="POST" action="{{ url_for('merchant.menu_toggle', item_id=item.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-{{ 'warning' if item.is_available else 'success' }}">
+                                        {% if item.is_available %}
+                                        <i class="bi bi-eye-slash"></i> 下架
+                                        {% else %}
+                                        <i class="bi bi-eye"></i> 上架
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('merchant.menu_delete', item_id=item.id) }}" class="d-inline" onsubmit="return confirm('确定要删除「{{ item.name }}」吗？此操作不可撤销。');">
+                                    <button type="submit" class="btn btn-outline-danger">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Modal -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('merchant.menu_add') }}">
+                {{ form.hidden_tag() }}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel"><i class="bi bi-plus-circle"></i> 添加菜品</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">菜品名称</label>
+                        {{ form.name(class="form-control", placeholder="请输入菜品名称") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">菜品描述</label>
+                        {{ form.description(class="form-control", rows=3, placeholder="请输入菜品描述") }}
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="price" class="form-label">单价 (元)</label>
+                            {{ form.price(class="form-control", placeholder="0.00", step="0.01") }}
+                        </div>
+                        <div class="col">
+                            <label for="stock" class="form-label">库存数量</label>
+                            {{ form.stock(class="form-control", placeholder="0") }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="category" class="form-label">分类</label>
+                            {{ form.category(class="form-select") }}
+                        </div>
+                        <div class="col">
+                            <label for="is_available" class="form-label">状态</label>
+                            {{ form.is_available(class="form-select") }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modals -->
+{% for item in menu_items %}
+<div class="modal fade" id="editModal{{ item.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ item.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('merchant.menu_edit', item_id=item.id) }}">
+                {{ form.hidden_tag() }}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel{{ item.id }}"><i class="bi bi-pencil"></i> 编辑菜品</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_name_{{ item.id }}" class="form-label">菜品名称</label>
+                        <input type="text" class="form-control" id="edit_name_{{ item.id }}" name="name" value="{{ item.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description_{{ item.id }}" class="form-label">菜品描述</label>
+                        <textarea class="form-control" id="edit_description_{{ item.id }}" name="description" rows="3">{{ item.description or '' }}</textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="edit_price_{{ item.id }}" class="form-label">单价 (元)</label>
+                            <input type="number" class="form-control" id="edit_price_{{ item.id }}" name="price" value="{{ item.price }}" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="col">
+                            <label for="edit_stock_{{ item.id }}" class="form-label">库存数量</label>
+                            <input type="number" class="form-control" id="edit_stock_{{ item.id }}" name="stock" value="{{ item.stock }}" min="0" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="edit_category_{{ item.id }}" class="form-label">分类</label>
+                            <select class="form-select" id="edit_category_{{ item.id }}" name="category">
+                                <option value="热菜" {% if item.category == '热菜' %}selected{% endif %}>热菜</option>
+                                <option value="凉菜" {% if item.category == '凉菜' %}selected{% endif %}>凉菜</option>
+                                <option value="汤品" {% if item.category == '汤品' %}selected{% endif %}>汤品</option>
+                                <option value="主食" {% if item.category == '主食' %}selected{% endif %}>主食</option>
+                                <option value="饮品" {% if item.category == '饮品' %}selected{% endif %}>饮品</option>
+                            </select>
+                        </div>
+                        <div class="col">
+                            <label for="edit_is_available_{{ item.id }}" class="form-label">状态</label>
+                            <select class="form-select" id="edit_is_available_{{ item.id }}" name="is_available">
+                                <option value="1" {% if item.is_available %}selected{% endif %}>上架</option>
+                                <option value="0" {% if not item.is_available %}selected{% endif %}>下架</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

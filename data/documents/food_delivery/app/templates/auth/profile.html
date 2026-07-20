@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}个人资料 - 外卖配送系统{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="card-title mb-4">个人资料</h3>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input class="form-control" value="{{ current_user.username }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">角色</label>
+                        <input class="form-control" value="{{ current_user.role }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.name.label }}</label>
+                        {{ form.name(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.phone.label }}</label>
+                        {{ form.phone(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.email.label }}</label>
+                        {{ form.email(class="form-control") }}
+                    </div>
+                    <hr>
+                    <p class="text-muted small">如需修改密码，请填写以下字段（不修改密码则留空）</p>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.old_password.label }}</label>
+                        {{ form.old_password(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.new_password.label }}</label>
+                        {{ form.new_password(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.confirm_password.label }}</label>
+                        {{ form.confirm_password(class="form-control") }}
+                    </div>
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

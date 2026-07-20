@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}数据统计 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-4">📊 数据统计</h4>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">营收概览</h5>
+        <div>
+            <a href="{{ url_for('admin.statistics', period='today') }}" class="btn btn-sm {% if period=='today' %}btn-primary{% else %}btn-outline-primary{% endif %}">今天</a>
+            <a href="{{ url_for('admin.statistics', period='week') }}" class="btn btn-sm {% if period=='week' %}btn-primary{% else %}btn-outline-primary{% endif %}">本周</a>
+            <a href="{{ url_for('admin.statistics', period='month') }}" class="btn btn-sm {% if period=='month' %}btn-primary{% else %}btn-outline-primary{% endif %}">本月</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p class="mb-1"><strong>营收笔数：</strong></p>
+                <p class="fs-4">{{ revenue.count }}</p>
+            </div>
+            <div class="col-md-6">
+                <p class="mb-1"><strong>营收金额：</strong></p>
+                <p class="fs-4 text-danger">¥{{ '%.2f'|format(revenue.revenue) }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">平台概览</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <h6>注册用户</h6>
+                    <p class="fs-4 mb-0">{{ summary.total_users }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <h6>商家数量</h6>
+                    <p class="fs-4 mb-0">{{ summary.total_merchants }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <h6>骑手数量</h6>
+                    <p class="fs-4 mb-0">{{ summary.total_riders }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <h6>店铺数量</h6>
+                    <p class="fs-4 mb-0">{{ summary.total_shops }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <h6>总订单数</h6>
+                    <p class="fs-4 mb-0">{{ summary.total_orders }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <h6>已完成订单</h6>
+                    <p class="fs-4 mb-0">{{ summary.completed_orders }}</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-3 text-center">
+                    <h6>总营收</h6>
+                    <p class="fs-4 mb-0">¥{{ '%.2f'|format(summary.total_revenue) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">订单状态分布</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>订单状态</th>
+                            <th>数量</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set status_colors = {
+                            'PENDING_PAYMENT': 'warning',
+                            'PAID': 'info',
+                            'ACCEPTED': 'primary',
+                            'PREPARING': 'secondary',
+                            'READY_FOR_PICKUP': 'dark',
+                            'DELIVERING': 'info',
+                            'DELIVERED': 'success',
+                            'COMPLETED': 'success',
+                            'CANCELLED': 'danger',
+                            'REFUND_REQUESTED': 'warning',
+                            'REFUNDED': 'secondary'
+                        } %}
+                        {% for status, count in stats.items() %}
+                        <tr>
+                            <td><span class="badge bg-{{ status_colors.get(status, 'secondary') }}">{{ status }}</span></td>
+                            <td>{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">用户增长（近7天）</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if growth %}
+                <table class="table table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>新增用户数</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in growth %}
+                        <tr>
+                            <td>{{ item.date }}</td>
+                            <td>{{ item.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">暂无数据</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

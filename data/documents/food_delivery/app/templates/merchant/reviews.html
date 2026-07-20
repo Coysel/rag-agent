@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}评价管理 - 外卖配送系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4"><i class="bi bi-star"></i> 评价管理</h1>
+
+    {% if not reviews %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-chat-square-text display-1"></i>
+        <h4 class="mt-3">暂无评价</h4>
+        <p>还没有收到任何评价。</p>
+    </div>
+    {% else %}
+    <div class="row">
+        {% for review in reviews %}
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong>{{ review.author.name or review.author.username }}</strong>
+                            <span class="ms-2 text-warning">
+                                {% for i in range(5) %}
+                                    {% if i < review.rating %}
+                                    <i class="bi bi-star-fill"></i>
+                                    {% else %}
+                                    <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <span class="text-muted ms-1">({{ review.rating }})</span>
+                            </span>
+                        </div>
+                        <small class="text-muted">{{ review.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+
+                    {% if review.comment %}
+                    <p class="mb-0">{{ review.comment }}</p>
+                    {% endif %}
+
+                    <!-- Existing Replies -->
+                    {% if review.replies and review.replies.count() > 0 %}
+                    <div class="mt-3 ms-4 border-start border-3 border-primary ps-3">
+                        {% for reply in review.replies %}
+                        <div class="mb-2">
+                            <small class="text-primary fw-bold"><i class="bi bi-reply-fill"></i> 商家回复：</small>
+                            <p class="mb-0">{{ reply.content }}</p>
+                            <small class="text-muted">{{ reply.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Reply Form -->
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#replyForm{{ review.id }}" aria-expanded="false">
+                            <i class="bi bi-reply"></i> 回复评价
+                        </button>
+                        <div class="collapse mt-2" id="replyForm{{ review.id }}">
+                            <form method="POST" action="{{ url_for('merchant.review_reply', review_id=review.id) }}">
+                                {{ form.hidden_tag() }}
+                                <div class="mb-2">
+                                    <textarea class="form-control" name="content" rows="2" placeholder="请输入回复内容..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-send"></i> 提交回复
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

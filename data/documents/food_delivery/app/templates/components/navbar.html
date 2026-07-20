@@ -1,0 +1,84 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
+            <i class="bi bi-truck"></i> 外卖配送系统
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.index') }}">首页</a>
+                </li>
+                {% if current_user.is_authenticated %}
+                    {% if current_user.role == 'user' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('user.cart') }}">
+                            <i class="bi bi-cart"></i> 购物车
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('user.orders') }}">我的订单</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('user.addresses') }}">收货地址</a>
+                    </li>
+                    {% elif current_user.role == 'merchant' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('merchant.dashboard') }}">商家中心</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('merchant.orders') }}">订单管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('merchant.menu') }}">菜品管理</a>
+                    </li>
+                    {% elif current_user.role == 'rider' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('rider.dashboard') }}">骑手中心</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('rider.active_orders') }}">配送中</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('rider.history') }}">历史配送</a>
+                    </li>
+                    {% elif current_user.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.dashboard') }}">管理后台</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.users') }}">用户管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.statistics') }}">数据统计</a>
+                    </li>
+                    {% endif %}
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i> {{ current_user.name or current_user.username }}
+                        <span class="badge bg-light text-primary">{{ current_user.role }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">个人资料</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">退出登录</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.login') }}">登录</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.register') }}">注册</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}收入统计 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3">💰 收入统计</h4>
+
+<!-- Period Filter -->
+<div class="mb-4">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('rider.earnings', period='today') }}" class="btn btn-sm {% if period == 'today' %}btn-primary{% else %}btn-outline-primary{% endif %}">今天</a>
+        <a href="{{ url_for('rider.earnings', period='week') }}" class="btn btn-sm {% if period == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">本周</a>
+        <a href="{{ url_for('rider.earnings', period='month') }}" class="btn btn-sm {% if period == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}">本月</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card border-primary h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title text-primary">
+                    <i class="bi bi-check-circle"></i> 完成配送
+                </h5>
+                <p class="display-6 fw-bold text-primary mb-0">{{ completed }}</p>
+                <small class="text-muted">完成订单数</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title text-info">
+                    <i class="bi bi-currency-yen"></i> 单均收入
+                </h5>
+                <p class="display-6 fw-bold text-info mb-0">¥{{ '%.2f'|format(earning_per_delivery) }}</p>
+                <small class="text-muted">每单固定收入</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title text-success">
+                    <i class="bi bi-wallet2"></i> 总收入
+                </h5>
+                <p class="display-6 fw-bold text-success mb-0">¥{{ '%.2f'|format(total_earnings) }}</p>
+                <small class="text-muted">期间累计收入</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

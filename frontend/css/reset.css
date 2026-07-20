@@ -1,0 +1,140 @@
+/* ═══════════════════════════════════════════════════════════
+   CSS Reset — 基于 modern-normalize + 定制
+   统一各浏览器的默认样式
+   ═══════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ── 标题 ──────────────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+}
+
+/* ── 文本元素 ──────────────────────────────────────────── */
+
+p {
+  margin-bottom: var(--space-3);
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* ── 列表 ──────────────────────────────────────────────── */
+
+ul, ol {
+  list-style: none;
+}
+
+/* ── 图片/媒体 ─────────────────────────────────────────── */
+
+img, svg, video, canvas {
+  display: block;
+  max-width: 100%;
+}
+
+/* ── 表单元素 ──────────────────────────────────────────── */
+
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* ── 表格 ──────────────────────────────────────────────── */
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* ── 代码 ──────────────────────────────────────────────── */
+
+code, kbd, pre, samp {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* ── 无障碍 ────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 隐藏 focus outline 给鼠标用户，保留给键盘用户 */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── 滚动条 ────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* ── 选中文本 ──────────────────────────────────────────── */
+
+::selection {
+  background: var(--primary-light);
+  color: var(--primary);
+}

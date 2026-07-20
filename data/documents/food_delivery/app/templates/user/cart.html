@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}购物车 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-cart"></i> 我的购物车</h4>
+
+{% if shop_groups %}
+{% for shop_id, group in shop_groups.items() %}
+<div class="card mb-3">
+    <div class="card-header bg-white">
+        <strong>{{ group.shop.name }}</strong>
+    </div>
+    <div class="card-body p-0">
+        {% for item in group['items'] %}
+        <div class="d-flex align-items-center p-3 border-bottom">
+            <div class="flex-grow-1">
+                <strong>{{ item.menu_item.name }}</strong>
+                <span class="text-danger ms-2">¥{{ '%.2f'|format(item.menu_item.price) }}</span>
+            </div>
+            <form method="post" action="{{ url_for('user.cart_update', item_id=item.id) }}" class="d-flex align-items-center">
+                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.menu_item.stock }}" class="form-control form-control-sm" style="width:70px">
+                <button class="btn btn-sm btn-outline-primary ms-1">更新</button>
+            </form>
+            <span class="text-danger fw-bold ms-2">¥{{ '%.2f'|format(item.subtotal) }}</span>
+            <form method="post" action="{{ url_for('user.cart_remove', item_id=item.id) }}" class="ms-2">
+                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+<div class="card">
+    <div class="card-body text-end">
+        <h5>合计: <span class="text-danger">¥{{ '%.2f'|format(total) }}</span></h5>
+        <a href="{{ url_for('user.checkout') }}" class="btn btn-primary btn-lg mt-2">去结算</a>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-cart-x display-1 text-muted"></i>
+    <p class="text-muted mt-3">购物车为空</p>
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">去逛逛</a>
+</div>
+{% endif %}
+{% endblock %}

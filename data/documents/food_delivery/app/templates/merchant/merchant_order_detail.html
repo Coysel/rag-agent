@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}订单详情 - 外卖配送系统{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('merchant.orders') }}">订单管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ order.order_number }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">{{ order.order_number }}</h2>
+            {% with label=order.status_label, color=order.status_color %}
+                {% include 'components/order_status_badge.html' %}
+            {% endwith %}
+        </div>
+        <div class="text-end">
+            <div class="fs-4 fw-bold text-success">¥{{ "%.2f"|format(order.total_amount) }}</div>
+            <div class="text-muted small">{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Order Items -->
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-cart"></i> 订单菜品</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>菜品</th>
+                                <th>单价</th>
+                                <th>数量</th>
+                                <th class="text-end">小计</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items %}
+                            <tr>
+                                <td>{{ item.item_name }}</td>
+                                <td>¥{{ "%.2f"|format(item.unit_price) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td class="text-end">¥{{ "%.2f"|format(item.subtotal) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">合计</td>
+                                <td class="text-end fw-bold">¥{{ "%.2f"|format(order.total_amount) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            {% if order.note %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> 备注</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ order.note }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Customer & Address Info -->
+        <div class="col-md-4 mb-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person"></i> 客户信息</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>姓名：</strong>{{ order.customer.name or order.customer.username }}</p>
+                    <p class="mb-0"><strong>电话：</strong>{{ order.customer.phone or '未提供' }}</p>
+                </div>
+            </div>
+
+            {% if order.address %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt"></i> 配送地址</h5>
+                </div>
+                <div class="card-body">
+                    {% if order.address.label %}
+                    <p class="mb-1"><span class="badge bg-info">{{ order.address.label }}</span></p>
+                    {% endif %}
+                    <p class="mb-0">{{ order.address.address_detail }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Payment Info -->
+            {% if order.payment %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-credit-card"></i> 支付信息</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>方式：</strong>{{ order.payment.method or '未记录' }}</p>
+                    <p class="mb-0"><strong>状态：</strong>
+                        {% if order.payment.status == 'success' %}
+                        <span class="badge bg-success">已支付</span>
+                        {% elif order.payment.status == 'pending' %}
+                        <span class="badge bg-warning">待支付</span>
+                        {% elif order.payment.status == 'refunded' %}
+                        <span class="badge bg-danger">已退款</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ order.payment.status }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Rider Info -->
+            {% if order.rider_id and order.rider %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-bicycle"></i> 配送骑手</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>姓名：</strong>{{ order.rider.name or order.rider.username }}</p>
+                    <p class="mb-0"><strong>电话：</strong>{{ order.rider.phone or '未提供' }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex gap-2 flex-wrap">
+                {% if order.status == 'PAID' %}
+                <form method="POST" action="{{ url_for('merchant.order_accept', order_id=order.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle"></i> 接单
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('merchant.order_reject', order_id=order.id) }}" class="d-inline" onsubmit="return confirm('确定要拒绝该订单吗？如果已支付将自动退款。');">
+                    <button type="submit" class="btn btn-outline-danger btn-lg">
+                        <i class="bi bi-x-circle"></i> 拒绝
+                    </button>
+                </form>
+
+                {% elif order.status == 'ACCEPTED' %}
+                <form method="POST" action="{{ url_for('merchant.order_preparing', order_id=order.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="bi bi-fire"></i> 开始备餐
+                    </button>
+                </form>
+
+                {% elif order.status == 'PREPARING' %}
+                <form method="POST" action="{{ url_for('merchant.order_ready', order_id=order.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check2-all"></i> 备餐完成
+                    </button>
+                </form>
+
+                {% elif order.status == 'CANCELLED' %}
+                <div class="alert alert-secondary mb-0 py-2 px-3">
+                    <i class="bi bi-info-circle"></i> 该订单已取消
+                </div>
+
+                {% elif order.status == 'REFUNDED' %}
+                <div class="alert alert-danger mb-0 py-2 px-3">
+                    <i class="bi bi-arrow-counterclockwise"></i> 该订单已退款
+                </div>
+
+                {% else %}
+                <div class="alert alert-info mb-0 py-2 px-3">
+                    <i class="bi bi-info-circle"></i> 当前状态无需操作
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mb-4">
+        <a href="{{ url_for('merchant.orders') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回订单列表
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}历史配送 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3">📜 历史配送</h4>
+
+{% if orders %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>订单号</th>
+                <th>商家</th>
+                <th>金额</th>
+                <th>完成时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>
+                    <strong>{{ order.order_number }}</strong>
+                </td>
+                <td>{{ order.shop.name }}</td>
+                <td>
+                    <span class="text-danger fw-bold">¥{{ '%.2f'|format(order.total_amount) }}</span>
+                </td>
+                <td>
+                    {% if order.updated_at %}
+                    <small class="text-muted">{{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    {% else %}
+                    <small class="text-muted">-</small>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('rider.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> 详情
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include 'components/pagination.html' %}
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-clock-history display-1 text-muted"></i>
+    <p class="text-muted mt-3">暂无历史配送记录</p>
+</div>
+{% endif %}
+{% endblock %}

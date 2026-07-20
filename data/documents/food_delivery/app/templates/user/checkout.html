@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}结算 - 外卖配送系统{% endblock %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-credit-card"></i> 确认订单</h4>
+
+<div class="row">
+    <div class="col-md-8">
+        {% for shop_id, group in shop_groups.items() %}
+        <div class="card mb-3">
+            <div class="card-header bg-white"><strong>{{ group.shop.name }}</strong></div>
+            <div class="card-body p-0">
+                {% for item in group['items'] %}
+                <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                    <div>
+                        <strong>{{ item.menu_item.name }}</strong>
+                        <span class="text-muted ms-2">x{{ item.quantity }}</span>
+                    </div>
+                    <span class="text-danger fw-bold">¥{{ '%.2f'|format(item.subtotal) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>合计: <span class="text-danger">¥{{ '%.2f'|format(total) }}</span></h5>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.address_id.label }}</label>
+                        {{ form.address_id(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.note.label }}</label>
+                        {{ form.note(class="form-control", rows=2, placeholder="如有特殊要求请备注") }}
+                    </div>
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
