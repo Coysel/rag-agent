@@ -246,34 +246,52 @@ class MCPClientManager:
         return text, []
 
     def _format_web_search_result(self, data: dict) -> Tuple[str, list]:
-        """格式化 web_search 结果"""
+        """格式化 web_search 结果 — 使用百度 API 返回的真实分数和完整字段"""
         if "error" in data:
             return f"联网搜索失败: {data['error']}", []
 
         results = data.get("results", [])
         if not results:
-            return data.get("message", "未找到相关网页结果。"), []
+            return "未找到相关网页结果。", []
 
-        lines = [f"### 联网搜索结果 ({len(results)} 条)\n"]
-        docs = []  # 作为 structured data 传给 context_docs
+        lines = [f"### 联网搜索结果（共 {len(results)} 条）\n"]
+        docs = []
         for i, r in enumerate(results, 1):
             title = r.get("title", "无标题")
             url = r.get("url", "")
-            snippet = r.get("snippet", "")
-            lines.append(f"{i}. **{title}**")
+            content = r.get("content") or r.get("snippet", "")
+            website = r.get("website", "")
+            date = r.get("date", "")
+            rerank = r.get("rerank_score", 0.5)
+            authority = r.get("authority_score", 0.5)
+
+            # 组合分数：相关度 × 权威度，映射到 RRF 区间供 context 排序
+            combined_score = round(rerank * (0.5 + 0.5 * authority), 4)
+
+            # 构建 LLM 可读文本（包含日期和来源站）
+            meta_parts = []
+            if website:
+                meta_parts.append(website)
+            if date:
+                meta_parts.append(date)
+            meta = f" ({', '.join(meta_parts)})" if meta_parts else ""
+
+            lines.append(f"{i}. **{title}**{meta}")
             if url:
                 lines.append(f"   链接: {url}")
-            lines.append(f"   {snippet}\n")
+            lines.append(f"   {content[:600]}")
+            lines.append("")
 
-            # 构建文档对象供 context_docs 使用
             docs.append({
                 "id": url,
                 "title": title,
                 "source": url,
-                "content": snippet,
-                "rrf_score": 0.5,
-                "dense_score": 0.5,
-                "bm25_score": 0.5,
+                "content": content,
+                "date": date,
+                "website": website,
+                "rrf_score": combined_score,
+                "dense_score": combined_score,
+                "bm25_score": combined_score,
             })
 
         return "\n".join(lines), docs

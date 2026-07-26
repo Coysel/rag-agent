@@ -12,7 +12,7 @@ class ChatRequest(BaseModel):
     stream: bool = Field(default=True, description="是否启用 SSE 流式输出")
     session_id: str = Field(default="", description="多轮对话会话 ID（空则自动创建）")
     categories: list[str] = Field(default_factory=list, description="限定检索的类别 ID 列表")
-    web_search: bool = Field(default=False, description="是否允许联网搜索（默认关闭）")
+    web_search: bool = Field(default=True, description="是否允许联网搜索（默认开启，Agent 自行判断是否需要）")
 
 
 class Source(BaseModel):

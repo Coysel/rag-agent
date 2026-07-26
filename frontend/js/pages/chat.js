@@ -48,12 +48,12 @@ const ChatPage = {
       const settings = Store.get('settings');
       const enabled = !!settings.webSearchEnabled;
       DOM.toggleClass(webToggle, 'active', enabled);
-      webToggle.title = enabled ? '联网搜索（已开启）' : '联网搜索（默认关闭）';
+      webToggle.title = enabled ? '联网搜索（已开启）' : '联网搜索（已关闭）';
 
       webToggle.addEventListener('click', () => {
         const active = !webToggle.classList.contains('active');
         DOM.toggleClass(webToggle, 'active', active);
-        webToggle.title = active ? '联网搜索（已开启）' : '联网搜索（默认关闭）';
+        webToggle.title = active ? '联网搜索（已开启）' : '联网搜索（已关闭）';
         const s = { ...Store.get('settings'), webSearchEnabled: active };
         Store.setState({ settings: s });
         Store.persist('settings', Config.STORAGE_KEYS.SETTINGS);
@@ -265,10 +265,18 @@ const ChatPage = {
     const contentEl = this._answerBubble.querySelector('.bubble-content');
     if (!contentEl) return;
 
-    // 替换 [来源: XXX] 为可点击链接
     let html = contentEl.innerHTML;
-    const panel = this._answerBubble.querySelector('.sources-panel');
 
+    // 匹配 [来源N] 格式（N=数字），按编号点击跳转到对应来源
+    html = html.replace(/\[来源(\d+)\]/g, (match, num) => {
+      const idx = parseInt(num, 10) - 1;
+      const title = (idx >= 0 && idx < this._currentSources.length)
+        ? DOM.escapeHTML(this._currentSources[idx].title)
+        : `来源${num}`;
+      return `<span class="source-cite" data-source-idx="${idx}" onclick="ChatPage._activateSourceIdx(${idx})" title="点击查看: ${title}">📎 来源${num}</span>`;
+    });
+
+    // 兼容旧格式 [来源: XXX]
     html = html.replace(/\[来源:\s*([^\]]+)\]/g, (match, ref) => {
       const escapedRef = DOM.escapeHTML(ref);
       return `<span class="source-cite" onclick="ChatPage._activateSource('${escapedRef}')" title="点击查看来源">📎 ${escapedRef}</span>`;
@@ -277,7 +285,20 @@ const ChatPage = {
     contentEl.innerHTML = html;
   },
 
-  /** 点击来源引用时展开面板并高亮 */
+  /** 点击来源引用时展开面板并高亮（按编号） */
+  _activateSourceIdx(idx) {
+    const panel = this._answerBubble?.querySelector('.sources-panel');
+    if (!panel) return;
+    DOM.addClass(panel, 'open');
+    const items = panel.querySelectorAll('.source-item');
+    if (items[idx]) {
+      items.forEach(item => DOM.removeClass(item, 'highlight'));
+      DOM.addClass(items[idx], 'highlight');
+      DOM.scrollTo(items[idx]);
+    }
+  },
+
+  /** 点击来源引用时展开面板并高亮（按标题匹配，兼容旧格式） */
   _activateSource(ref) {
     const panel = DOM.$('.sources-panel');
     if (panel) {

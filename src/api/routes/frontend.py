@@ -35,6 +35,20 @@ def setup_frontend(app: FastAPI):
                 str(frontend_dir / "index.html"),
                 media_type="text/html; charset=utf-8",
             )
+
+        # SPA 兜底路由: 未匹配的 GET 请求返回 index.html（由前端路由处理）
+        # 注意: 必须在所有 API router 注册之后调用，否则会拦截 API 请求
+        @app.get("/{full_path:path}")
+        async def spa_fallback(full_path: str):
+            # 不拦截 API 路径（已由前面的 router 处理，这里只处理未匹配的）
+            # 也不拦截静态文件（/static/... 已被 StaticFiles mount 拦截）
+            target = frontend_dir / full_path
+            if target.is_file():
+                return FileResponse(str(target), media_type=None)
+            return FileResponse(
+                str(frontend_dir / "index.html"),
+                media_type="text/html; charset=utf-8",
+            )
     else:
         # V1 兼容: 单文件 HTML 回退
         v1_path = project_root / "src" / "api" / "frontend.html"

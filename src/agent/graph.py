@@ -96,7 +96,7 @@ def get_initial_state(
     conversation_history: list = None,
     session_id: str = "",
     doc_ids: list[str] | None = None,
-    web_search: bool = False,
+    web_search: bool = True,
 ) -> dict:
     """
     创建初始 State
@@ -107,7 +107,7 @@ def get_initial_state(
         conversation_history: 历史对话（多轮对话上下文）
         session_id: 会话 ID
         doc_ids: 限定搜索的文档 ID 列表，None/空=全部
-        web_search: 是否允许联网搜索
+        web_search: 是否允许联网搜索（默认开启，由 config.WEB_SEARCH_ENABLED 全局控制）
     """
     return {
         "query": query,

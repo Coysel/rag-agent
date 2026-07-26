@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     VOYAGE_API_KEY: str = ""
     DEEPSEEK_API_KEY: str = ""
+    BAIDU_API_KEY: str = ""
 
     # ── Admin Key ───────────────────────────────────────────
     ADMIN_API_KEY: str = "admin-secret-change-me"
@@ -113,6 +114,7 @@ ANTHROPIC_API_KEY = _settings.ANTHROPIC_API_KEY
 OPENAI_API_KEY = _settings.OPENAI_API_KEY
 VOYAGE_API_KEY = _settings.VOYAGE_API_KEY
 DEEPSEEK_API_KEY = _settings.DEEPSEEK_API_KEY
+BAIDU_API_KEY = _settings.BAIDU_API_KEY
 ADMIN_API_KEY = _settings.ADMIN_API_KEY
 
 LLM_PROVIDER = _settings.LLM_PROVIDER

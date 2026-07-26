@@ -43,7 +43,7 @@ const Store = (function () {
       stream: true,
       adminKey: '',
       autoCategorize: true,
-      webSearchEnabled: false,
+      webSearchEnabled: true,
       filters: {
         categories: [],
       },

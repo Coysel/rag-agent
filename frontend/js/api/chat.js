@@ -32,10 +32,8 @@ const ChatAPI = {
       body.categories = filters.categories;
     }
 
-    // 传递联网搜索开关
-    if (settings.webSearchEnabled) {
-      body.web_search = true;
-    }
+    // 传递联网搜索开关（始终显式发送，不依赖后端默认值）
+    body.web_search = settings.webSearchEnabled ?? true;
 
     return fetch(`${Config.API_BASE}${endpoint}`, {
       method: 'POST',

@@ -32,16 +32,24 @@ router = APIRouter(tags=["chat"])
 def _extract_sources(state: dict) -> list[Source]:
     """从 State 中提取引用来源"""
     context_docs = state.get("context_docs", [])
+    if not context_docs:
+        # 兜底：如果 state_update 没有 context_docs（某些 LangGraph stream mode），尝试从其他字段获取
+        # 在 upstream 模式下，state_update 只包含节点返回的 delta
+        context_docs = state.get("context_docs", [])
+
     sources = []
     seen = set()
     for doc in context_docs:
         title = doc.get("title", "未知来源")
-        if title not in seen:
-            seen.add(title)
+        source_url = doc.get("source", "")
+        # title 去重（同名网页只保留第一条）
+        dedup_key = f"{title}|{source_url}"
+        if dedup_key not in seen:
+            seen.add(dedup_key)
             sources.append(Source(
                 title=title,
-                source=doc.get("source", ""),
-                score=doc.get("rrf_score", doc.get("dense_score", doc.get("bm25_score", 0))),
+                source=source_url,
+                score=round(doc.get("rrf_score", doc.get("dense_score", doc.get("bm25_score", 0))), 4),
                 content=doc.get("content", "")[:800],
             ))
     return sources

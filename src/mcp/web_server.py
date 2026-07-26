@@ -1,11 +1,13 @@
 """
-MCP 联网搜索 Server — 基于 Bing 的网页搜索工具
+MCP 联网搜索 Server — 基于百度搜索 API (千帆 AppBuilder)
 
 提供工具:
   - web_search: 联网搜索网页，返回标题、链接和摘要
+
+API 文档: https://ai.baidu.com/ai-doc/AppBuilder/pmaxd1hvy
+免费额度: 每日 100 次
 """
 import json
-import re
 import sys
 import os
 import asyncio
@@ -21,72 +23,95 @@ except ImportError:
     HAS_MCP = False
 
 
-# ── Bing HTML 解析 ────────────────────────────────────────
+# ── 百度搜索 API 配置 ────────────────────────────────────
 
-_BING_URL = "https://cn.bing.com/search"
-
-_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/120.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml",
-    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-}
-
-_ALGO_RE = re.compile(r'<li class="b_algo"[^>]*>(.*?)</li>', re.DOTALL)
-_TITLE_RE = re.compile(r'<h2[^>]*><a[^>]*href="([^"]*)"[^>]*>(.*?)</a></h2>', re.DOTALL)
-_SNIPPET_RE = re.compile(r'<p[^>]*>(.*?)</p>', re.DOTALL)
-_TAG_RE = re.compile(r'<[^>]+>')
+_BAIDU_SEARCH_URL = "https://qianfan.baidubce.com/v2/ai_search/web_search"
 
 
-def _clean_html(text: str) -> str:
-    text = _TAG_RE.sub("", text)
-    text = text.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
-    text = text.replace("&quot;", '"').replace("&#39;", "'").replace("&nbsp;", " ")
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def _extract_results(html: str, max_results: int) -> list:
-    results = []
-    for match in _ALGO_RE.finditer(html):
-        if len(results) >= max_results:
-            break
-        block = match.group(1)
-        title_match = _TITLE_RE.search(block)
-        if not title_match:
-            continue
-        url = title_match.group(1)
-        title = _clean_html(title_match.group(2))
-        snippet = ""
-        snippet_match = _SNIPPET_RE.search(block)
-        if snippet_match:
-            snippet = _clean_html(snippet_match.group(1))
-        if title and url:
-            results.append({"title": title, "url": url, "snippet": snippet[:500]})
-    return results
+def _get_api_key() -> str:
+    """从 config 获取百度 API Key"""
+    from config import BAIDU_API_KEY
+    return BAIDU_API_KEY
 
 
 # ── 搜索实现（同步，在线程池中运行）─────────────────────
 
 def _search_sync(query: str, max_results: int) -> str:
     """在单独的线程中执行 HTTP 请求，避免阻塞 asyncio 事件循环"""
-    try:
-        import httpx
-        max_results = min(max(max_results, 1), 10)
+    import httpx
 
+    api_key = _get_api_key()
+    if not api_key:
+        return json.dumps({
+            "error": "百度 API Key 未配置。请在 .env 中设置 BAIDU_API_KEY。"
+            "申请地址: https://qianfan.cloud.baidu.com/appbuilder",
+        }, ensure_ascii=False)
+
+    max_results = min(max(max_results, 1), 20)
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    body = {
+        "messages": [{"role": "user", "content": query}],
+        "search_source": "baidu_search_v2",
+        "resource_type_filter": [{"type": "web", "top_k": max_results}],
+    }
+
+    try:
         with httpx.Client(timeout=15.0, follow_redirects=True) as client:
-            resp = client.get(_BING_URL, params={"q": query, "count": max_results}, headers=_HEADERS)
+            resp = client.post(_BAIDU_SEARCH_URL, headers=headers, json=body)
             resp.raise_for_status()
 
-        raw_results = _extract_results(resp.text, max_results)
+        data = resp.json()
+
+        # 检查业务层错误码（401 等 HTTP 错误由 raise_for_status 处理，
+        # 这里处理 HTTP 200 但业务失败的情况）
+        error_code = data.get("code")
+        if error_code:
+            return json.dumps({
+                "error": f"百度 API 错误 (code={error_code}): {data.get('message', '未知错误')}",
+            }, ensure_ascii=False)
+
+        references = data.get("references", [])
+
+        # 完整传递百度 API 返回的字段，不做截断
+        results = []
+        for ref in references:
+            # content 和 snippet 通常相同（均为摘要），content 可能更长
+            full_content = ref.get("content") or ref.get("snippet", "")
+            results.append({
+                "title": ref.get("title", "无标题"),
+                "url": ref.get("url", ""),
+                "content": full_content,
+                "snippet": ref.get("snippet", ""),
+                "website": ref.get("website", ""),
+                "date": ref.get("date", ""),
+                "rerank_score": ref.get("rerank_score", 0.5),
+                "authority_score": ref.get("authority_score", 0.5),
+            })
 
         return json.dumps({
-            "results": raw_results,
-            "total": len(raw_results),
+            "results": results,
+            "total": len(results),
             "query": query,
         }, ensure_ascii=False)
+
+    except httpx.HTTPStatusError as e:
+        # HTTP 4xx/5xx → 尝试解析 body 中的错误信息
+        detail = ""
+        try:
+            err_data = e.response.json()
+            detail = err_data.get("message", e.response.text[:200])
+        except Exception:
+            detail = e.response.text[:200]
+        return json.dumps({
+            "error": f"百度 API HTTP {e.response.status_code}: {detail}",
+        }, ensure_ascii=False)
+    except httpx.TimeoutException:
+        return json.dumps({"error": "搜索请求超时（15s），请稍后重试"}, ensure_ascii=False)
     except Exception as e:
         return json.dumps({"error": f"搜索失败: {str(e)}"}, ensure_ascii=False)
 
@@ -105,8 +130,8 @@ def create_web_search_server() -> "Server":
             Tool(
                 name="web_search",
                 description=(
-                    "使用 Bing 搜索互联网获取最新信息。"
-                    "返回网页标题、URL 和内容摘要。"
+                    "使用百度搜索引擎获取互联网最新信息。"
+                    "返回网页标题、URL、内容摘要、发布日期和来源网站。"
                     "适用于: 用户要求联网搜索、查询实时信息、最新新闻、天气、"
                     "最新版本、最新进展等本地知识库不可能包含的内容。"
                 ),
@@ -115,11 +140,11 @@ def create_web_search_server() -> "Server":
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "搜索查询文本",
+                            "description": "搜索查询文本。建议使用简洁的关键词组合，例如 '北京今天天气' 而非 '帮我查一下北京今天的天气怎么样'",
                         },
                         "max_results": {
                             "type": "integer",
-                            "description": "返回结果数量，默认 5，最多 10",
+                            "description": "返回结果数量，默认 5，最多 20",
                             "default": 5,
                         },
                     },
@@ -136,7 +161,6 @@ def create_web_search_server() -> "Server":
             if not query.strip():
                 result = json.dumps({"error": "搜索查询不能为空"}, ensure_ascii=False)
             else:
-                # 在独立线程中运行同步 HTTP 请求，避免阻塞 asyncio
                 result = await asyncio.to_thread(_search_sync, query, max_results)
         else:
             result = json.dumps({"error": f"未知工具: {name}"}, ensure_ascii=False)
