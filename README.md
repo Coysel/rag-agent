@@ -34,7 +34,7 @@ rag/
 │   ├── js/api/         # API 客户端 + SSE 流解析
 │   ├── js/store/       # 状态管理 (localStorage + Store)
 │   └── css/            # 样式 (CSS 变量 + 响应式)
-├── tests/              # pytest 测试 (31 个)
+├── tests/              # pytest 测试 (32 个)
 ├── scripts/            # 工具脚本 (索引文档, 运行评估)
 ├── docs/               # 迭代报告 (fullstack-iterations/)
 ├── data/documents/     # 知识库文档
