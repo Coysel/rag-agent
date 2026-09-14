@@ -58,6 +58,7 @@ htmlcov/
 .nox/
 coverage.xml
 *.cover
+reports/
 
 # ── Logs ──────────────────────────────────────────────────
 logs/
