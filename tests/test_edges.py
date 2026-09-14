@@ -72,7 +72,9 @@ def app_with_mocks(mocker):
     mock_emb.return_value.provider = "mock"
     mock_emb.return_value.model_name = "mock"
 
-    mock_mcp = mocker.patch("src.mcp.client_manager.get_mcp_manager")
+    # 显式导入子模块：mocker.patch 只做属性解析，不负责导入子模块
+    import src.mcp.client_manager as mcp_client_manager
+    mock_mcp = mocker.patch.object(mcp_client_manager, "get_mcp_manager")
     mock_mcp.return_value.initialize = mocker.AsyncMock()
     mock_mcp.return_value.close = mocker.AsyncMock()
     mock_mcp.return_value._all_tools = []

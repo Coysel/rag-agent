@@ -51,23 +51,22 @@ jobs:
             python - <<'PY' || true
           import xml.etree.ElementTree as ET
           root = ET.parse("reports/junit.xml").getroot()
-          n = 0
+          failed = []
           for tc in root.iter("testcase"):
               node = tc.find("failure")
               if node is None:
                   node = tc.find("error")
-              if node is None:
-                  continue
-              n += 1
-              print(f"- {tc.get('classname')}::{tc.get('name')}")
-              msg = (node.get("message") or "").strip()
-              if msg:
-                  print(f"  message: {msg[:400]}")
+              if node is not None:
+                  failed.append((tc, node))
+          print(f"(失败用例数: {len(failed)})")
+          for tc, node in failed:
+              msg = (node.get("message") or "").strip().replace("\n", " ")
+              print(f"- {tc.get('classname')}::{tc.get('name')} :: {msg[:150]}")
+          if failed:
+              tc, node = failed[0]
+              print("\n### 首个失败详情")
               text = (node.text or "").strip()
-              if text:
-                  print("  traceback:")
-                  print("\n".join("    " + l for l in text.splitlines()[-15:]))
-          print(f"(失败用例数: {n})")
+              print("\n".join(text.splitlines()[-18:]))
           PY
             echo ""
             echo "### 覆盖率"

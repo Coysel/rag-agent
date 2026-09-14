@@ -27,7 +27,7 @@ datasets>=2.20.0
 openai>=1.50.0
 
 # MCP Python SDK
-mcp>=1.0.0
+mcp>=1.0.0,<2
 
 # 数据处理
 pydantic>=2.0.0
