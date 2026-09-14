@@ -39,6 +39,51 @@ jobs:
             --html=reports/report.html --self-contained-html \
             --alluredir=reports/allure-results
 
+      - name: 失败诊断（写入注解与 job summary）
+        if: failure()
+        run: |
+          {
+            echo "### 环境"
+            python -V
+            pip list 2>/dev/null | grep -Ei '^(pytest|pytest-cov|pytest-asyncio|pytest-mock|pytest-html|allure|fastapi|starlette|httpx|lxml|mcp|langgraph|langchain-core|chromadb|ragas|pydantic|openai|anthropic|tiktoken|numpy|rank-bm25)' || true
+            echo ""
+            echo "### junit.xml 中的失败用例"
+            python - <<'PY' || true
+          import xml.etree.ElementTree as ET
+          root = ET.parse("reports/junit.xml").getroot()
+          n = 0
+          for tc in root.iter("testcase"):
+              node = tc.find("failure")
+              if node is None:
+                  node = tc.find("error")
+              if node is None:
+                  continue
+              n += 1
+              print(f"- {tc.get('classname')}::{tc.get('name')}")
+              msg = (node.get("message") or "").strip()
+              if msg:
+                  print(f"  message: {msg[:400]}")
+              text = (node.text or "").strip()
+              if text:
+                  print("  traceback:")
+                  print("\n".join("    " + l for l in text.splitlines()[-15:]))
+          print(f"(失败用例数: {n})")
+          PY
+            echo ""
+            echo "### 覆盖率"
+            python - <<'PY' || true
+          import xml.etree.ElementTree as ET
+          root = ET.parse("reports/coverage.xml").getroot()
+          print("line-rate:", root.get("line-rate"))
+          PY
+          } > /tmp/diag.txt 2>&1
+          echo '## 失败诊断' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/diag.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          msg=$(tr '\n' '|' < /tmp/diag.txt | cut -c1-2500)
+          echo "::error title=CI诊断::$msg"
+
       - name: 归档测试报告
         if: always()
         uses: actions/upload-artifact@v4
