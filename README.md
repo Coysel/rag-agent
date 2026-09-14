@@ -1,5 +1,7 @@
 # Agentic RAG — 多智能体检索增强生成系统
 
+[![tests](https://github.com/Coysel/rag-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/Coysel/rag-agent/actions/workflows/tests.yml)
+
 基于 LangGraph ReAct Agent + 混合检索 + MCP 工具协议 + 百度联网搜索的智能问答系统。
 
 ## 核心能力
@@ -35,6 +37,7 @@ rag/
 │   ├── js/store/       # 状态管理 (localStorage + Store)
 │   └── css/            # 样式 (CSS 变量 + 响应式)
 ├── tests/              # pytest 测试 (75 个)
+├── .github/workflows/  # CI (push/PR 全量用例 + 覆盖率门槛, 每日 e2e 冒烟)
 ├── scripts/            # 工具脚本 (索引文档, 运行评估)
 ├── docs/               # 迭代报告 (fullstack-iterations/)
 ├── data/documents/     # 知识库文档
@@ -251,11 +254,14 @@ v2.1 重构了来源引用流程，解决"LLM 不引用来源"的问题：
 ## 运行测试
 
 ```bash
-# 全量用例（75 条，74 通过 / 1 条件跳过）
+# 全量用例（75 条）
 pytest -q
 
-# 仅单元测试（排除 e2e 标记）
+# 仅单元测试（51 条，排除 e2e 标记）
 pytest -m "not e2e" -q
+
+# 仅端到端测试（24 条）
+pytest -m e2e -q
 
 # 覆盖率与报告（JUnit / HTML / Allure 结果）
 pytest -q --cov=src --cov-report=term \
@@ -264,9 +270,9 @@ pytest -q --cov=src --cov-report=term \
   --alluredir=reports/allure-results
 ```
 
-用例分两层：单元测试（文档加载、Agent 节点、检索调度、MCP 工具 Server）与端到端测试（chat 接口 SSE、会话持久化、并发与会话边界、模型故障降级），带 `e2e` 标记。全部离线运行——LLM、向量库与 MCP manager 均为 mock，不产生 API 费用。
+用例分两层：单元测试（文档加载、Agent 节点、检索调度、MCP 工具 Server）与端到端测试（chat 接口 SSE、会话持久化、并发与会话边界、模型故障降级），带 `e2e` 标记。除 HybridRetriever 检索用例需要本地 embedding 依赖（缺失时自动跳过）外，其余用例全部离线运行——LLM、向量库与 MCP manager 均为 mock，不产生 API 费用。
 
-当前覆盖率 51%（`--cov=src`）。GitHub Actions 在 push / PR 时执行全量用例并强制覆盖率门槛 45%，测试报告归档为 JUnit、HTML 与 Allure 结果；每天 02:00（北京时间）额外执行 e2e 冒烟。
+当前覆盖率 51%（`--cov=src`），CI 覆盖率门槛 45%。GitHub Actions 在 push / PR 时执行全量用例并归档 JUnit、HTML 与 Allure 报告，每天 02:00（北京时间）单独执行 e2e 冒烟；最近一次运行状态见页首徽章。
 
 ---
 
