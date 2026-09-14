@@ -1,7 +1,12 @@
 """
 检索模块单元测试
 """
+import importlib.util
+
 import pytest
+
+_HAS_SENTENCE_TRANSFORMERS = \
+    importlib.util.find_spec("sentence_transformers") is not None
 
 
 class TestParentRetriever:
@@ -52,6 +57,10 @@ class TestParentRetriever:
         assert pr.expand_to_parents([]) == []
 
 
+@pytest.mark.skipif(
+    not _HAS_SENTENCE_TRANSFORMERS,
+    reason="需要 sentence_transformers 与本地模型缓存（CI 不安装，跳过）",
+)
 class TestHybridRetriever:
     """混合检索器测试（注意：需要已构建的索引）"""
 
